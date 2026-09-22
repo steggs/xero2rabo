@@ -1,0 +1,68 @@
+{
+  "note": "Statutory Jersey filing deadlines the runner checks Karbon's own templates and work items against. Sources are listed per entry. Carl confirms the per-client period before any of this is treated as authoritative: a client may hold Revenue Jersey approval for a non-standard GST period, and that is a fact about the client, not about the rule.",
+  "reviewed_on": "2026-09-22",
+  "timezone": "Europe/Jersey",
+  "deadline_types": [
+    {
+      "id": "gst_return",
+      "label": "GST return and payment",
+      "authority": "Revenue Jersey",
+      "default_frequency": "quarterly",
+      "karbon_recurrence_frequency": ["Quarter"],
+      "rule": "The return is due no later than the last day of the month following the end of the return period. Periods are normally three months. A quarter ending 31 March is therefore due 30 April.",
+      "deadline_shape": {
+        "kind": "last_day_of_month",
+        "description": "Every GST deadline date should fall on the final day of a calendar month."
+      },
+      "late_consequence": "£100 surcharge for a late return, and a further £100 per month up to nine months if it remains undelivered.",
+      "caveats": [
+        "Monthly and annual return periods exist by approval from the Comptroller. If a client is on one of those, the quarterly expectation below will report a mismatch that is correct for the rule and wrong for that client.",
+        "The payment deadline runs with the return deadline; a template that tracks only the filing is tracking half the obligation."
+      ],
+      "source": "https://www.gov.je/TaxesMoney/GST/Businesses/SubmittingReturn/pages/return.aspx"
+    },
+    {
+      "id": "combined_employer_return",
+      "label": "Combined Employer Return (ITIS, social security contributions and manpower)",
+      "authority": "Revenue Jersey and Customer and Local Services",
+      "default_frequency": "monthly",
+      "karbon_recurrence_frequency": ["Month"],
+      "rule": "The combined employer return, and payment of ITIS deductions and Class 1 contributions, are due by the 15th day of the month following the month the contributions relate to.",
+      "deadline_shape": {
+        "kind": "day_of_month",
+        "day": 15,
+        "description": "Every CER deadline date should fall on the 15th of a month."
+      },
+      "late_consequence": "Late payment of contributions attracts penalties and interest; persistent lateness is enforced by Customer and Local Services.",
+      "caveats": [
+        "One return now covers tax, social security and manpower together. A firm still running separate ITIS and social security work items is tracking a return that no longer exists in that form.",
+        "The 15th is a calendar day, not a working day. The runner counts calendar days for exactly this reason."
+      ],
+      "source": "https://www.gov.je/TaxesMoney/IncomeTax/Employers/Returns/pages/completingcombinedemployerreturn.aspx"
+    },
+    {
+      "id": "personal_tax_return",
+      "label": "Personal income tax return",
+      "authority": "Revenue Jersey",
+      "default_frequency": "annual",
+      "karbon_recurrence_frequency": ["Year"],
+      "rule": "For a year of assessment, a paper return is due by midnight on 31 May of the following year and an online return by midnight on 31 July of the following year.",
+      "deadline_shape": {
+        "kind": "fixed_dates",
+        "dates": ["05-31", "07-31"],
+        "description": "Every personal tax deadline date should fall on 31 May or 31 July."
+      },
+      "late_consequence": "A late filing penalty applies, with further penalties if the return remains outstanding.",
+      "caveats": [
+        "31 May and 31 July are different deadlines for the same obligation, not a deadline and a grace period. Which one applies depends on how that client files.",
+        "A template carrying only 31 July will look compliant for online filers and will quietly miss every paper filer by two months."
+      ],
+      "source": "https://www.gov.je/TaxesMoney/IncomeTax/Individuals/YourTaxReturn/pages/fileyourpersonaltaxreturn.aspx"
+    }
+  ],
+  "work_type_hints": {
+    "gst_return": ["gst"],
+    "combined_employer_return": ["combined employer", "cer", "itis", "employer return", "social security"],
+    "personal_tax_return": ["personal tax", "personal income tax", "income tax return", "itr"]
+  }
+}
