@@ -16,7 +16,7 @@ import sys
 from typing import Any
 
 from .config import Config, ConfigError, load_config
-from .karbon_audit import format_audit, load_expectations, run_audit
+from .karbon_audit import DumpSource, format_audit, load_expectations, run_audit
 from .karbon_client import KarbonClient, KarbonError
 from .policy import PolicyViolation
 from .stall import Thresholds, format_report, run_stall_check
@@ -150,6 +150,33 @@ def cmd_audit_karbon(args: argparse.Namespace, config: Config) -> int:
         for contact in sorted(result.inventory.contacts, key=lambda c: c.get("FullName") or ""):
             print(f"  {contact.get('FullName')}  [{contact.get('ContactKey')}]")
 
+    return 1 if result.by_level("mismatch") else 0
+
+
+def cmd_audit_dump(args: argparse.Namespace, config: Config) -> int:
+    """Task two, run against a saved dump instead of the live API.
+
+    scripts/karbon-dump.sh produces the directory this reads. Useful when the
+    machine holding the credentials is not the machine doing the analysis, and
+    it makes the audit reproducible: the same dump gives the same findings.
+    """
+    expectations = load_expectations()
+    result = run_audit(DumpSource(args.dir), expectations=expectations,
+                       work_item_sample=args.sample)
+    store = _store(config, create=True)
+    store.audit(
+        actor_type="human",
+        actor_id=args.actor,
+        subject_type="runner",
+        subject_id=None,
+        event_type="karbon.audited_from_dump",
+        detail={
+            "dump_dir": args.dir,
+            "mismatches": len(result.by_level("mismatch")),
+            "to_confirm": len(result.by_level("check")),
+        },
+    )
+    print(format_audit(result, expectations))
     return 1 if result.by_level("mismatch") else 0
 
 
@@ -363,6 +390,13 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--list-clients", action="store_true")
     audit.add_argument("--sample", type=int, default=500, help="Max work items to sample")
     audit.set_defaults(func=cmd_audit_karbon)
+
+    dump = sub.add_parser(
+        "audit-dump", help="Run the task two audit over a saved karbon-dump directory"
+    )
+    dump.add_argument("--dir", default="./karbon-dump")
+    dump.add_argument("--sample", type=int, default=5000)
+    dump.set_defaults(func=cmd_audit_dump)
 
     sync = sub.add_parser("sync-work-items", help="Mirror Karbon work items into the store")
     sync.add_argument("--filter", default=None, help="OData $filter, spaced status form")

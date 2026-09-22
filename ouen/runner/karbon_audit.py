@@ -348,3 +348,58 @@ def format_audit(result: AuditResult, expectations: dict[str, Any] | None = None
             lines.append(f"    Caveat: {caveat}")
         lines.append(f"    Source: {entry['source']}")
     return "\n".join(lines).rstrip() + "\n"
+
+
+class DumpSource:
+    """Runs the same audit over files produced by scripts/karbon-dump.sh.
+
+    The audit only ever reads, so it does not care whether the reads come from
+    the API or from a directory of JSON saved earlier. This makes task two
+    completable on a machine with no Karbon access, and makes the audit itself
+    reproducible: the same dump always produces the same findings.
+    """
+
+    def __init__(self, directory: str | Path) -> None:
+        self.dir = Path(directory)
+        if not self.dir.is_dir():
+            raise FileNotFoundError(f"no such dump directory: {self.dir}")
+        self._schedules: dict[str, dict[str, Any]] | None = None
+
+    def _load(self, name: str) -> dict[str, Any]:
+        path = self.dir / f"{name}.json"
+        if not path.exists():
+            return {"value": []}
+        return json.loads(path.read_text())
+
+    def _values(self, name: str) -> Iterable[dict[str, Any]]:
+        return self._load(name).get("value", [])
+
+    def get(self, path: str, **params: Any) -> dict[str, Any]:
+        if path == "/v3/TenantSettings":
+            return self._load("tenant-settings")
+        raise KeyError(f"{path} is not in the dump")
+
+    def iter_organizations(self):
+        return iter(self._values("organizations"))
+
+    def iter_contacts(self):
+        return iter(self._values("contacts"))
+
+    def iter_client_groups(self):
+        return iter(self._values("client-groups"))
+
+    def iter_work_templates(self):
+        return iter(self._values("work-templates"))
+
+    def iter_work_items(self, odata_filter: str | None = None):
+        return iter(self._values("work-items"))
+
+    def get_work_schedule(self, key: str) -> dict[str, Any]:
+        if self._schedules is None:
+            self._schedules = {
+                s.get("WorkScheduleKey"): s for s in self._values("work-schedules")
+            }
+        schedule = self._schedules.get(key)
+        if schedule is None:
+            raise KarbonError(f"work schedule {key} is not in the dump")
+        return schedule

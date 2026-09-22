@@ -69,6 +69,12 @@ fall on 31 May or 31 July, and that recurrence frequencies match. Everything it
 cannot judge without knowing a client's circumstances it prints for Carl to
 confirm rather than guessing at.
 
+If the machine holding the credentials is not the machine doing the analysis,
+`scripts/karbon-dump.sh` makes the same read only calls and saves the results
+as JSON, and `python -m runner.cli audit-dump --dir ./karbon-dump` runs the
+audit over those files with no network at all. The script checks access first,
+so it also answers task one.
+
 Task three, the runner schema, is complete. See `docs/schema.md` and
 `sql/schema.sql`.
 

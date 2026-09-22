@@ -213,3 +213,43 @@ def test_the_report_prints_the_rule_and_its_source():
     assert "15th day of the month following" in text
     assert "31 May" in text and "31 July" in text
     assert "https://www.gov.je/" in text
+
+
+def test_the_audit_runs_identically_over_a_saved_dump(tmp_path):
+    """A dump directory and the live API are interchangeable inputs, so task
+    two can be completed on a machine that has no Karbon access."""
+    import json as _json
+
+    from runner.karbon_audit import DumpSource
+
+    files = {
+        "tenant-settings": {"TenantKey": "TEN1", "WorkTypes": [{"Name": "GST Return"}]},
+        "organizations": {"value": [{"FullName": "Pier Road Trading Ltd"}]},
+        "contacts": {"value": []},
+        "client-groups": {"value": []},
+        "work-templates": {"value": []},
+        "work-items": {"value": [_gst_item("2026-04-20T00:00:00Z")]},
+        "work-schedules": {
+            "value": [
+                {
+                    "WorkScheduleKey": "S1",
+                    "RecurrenceFrequency": "Quarter",
+                    "ScheduleDeadlineDateMethod": "LastDayOfMonth",
+                }
+            ]
+        },
+    }
+    for name, payload in files.items():
+        (tmp_path / f"{name}.json").write_text(_json.dumps(payload))
+
+    result = run_audit(DumpSource(tmp_path))
+    assert result.tenant_key == "TEN1"
+    assert result.inventory.total == 1
+    assert any("does not match the rule" in o.message for o in result.by_level("mismatch"))
+
+
+def test_a_missing_dump_directory_fails_loudly(tmp_path):
+    from runner.karbon_audit import DumpSource
+
+    with pytest.raises(FileNotFoundError):
+        DumpSource(tmp_path / "nope")

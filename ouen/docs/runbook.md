@@ -34,6 +34,30 @@ common false positive is a client holding Revenue Jersey approval for a non
 standard GST period, which is correct for that client and looks like a
 frequency mismatch to the audit.
 
+## When the credentials and the analysis are on different machines
+
+`scripts/karbon-dump.sh` makes the same read only calls the audit makes and
+saves the results as JSON. Run it wherever the credentials live:
+
+```
+export KARBON_BEARER_TOKEN=...
+export KARBON_ACCESS_KEY=...
+./scripts/karbon-dump.sh ./karbon-dump
+```
+
+It checks access first and stops with a plain explanation if the call is
+refused, so it doubles as the task one check. Then run the audit over the
+files, anywhere, with no network:
+
+```
+python -m runner.cli audit-dump --dir ./karbon-dump
+```
+
+The findings are identical to the live run, and they are reproducible: the same
+dump always produces the same output, which matters when the point is to agree
+on what Karbon currently holds. The dump contains client names and work items,
+so treat it as client data.
+
 ## Wiring the webhook pipe
 
 Karbon only delivers to an HTTPS URL, so the listener goes behind a TLS
